@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+    <head>
+        <% include partials/head %>    
+    </head>
+    <script>
+        $(document).ready(function() {
+            console.log("ready");
+            
+            $(document).ajaxStart(function(){
+                $("#wait").css("display", "block");
+            });
+            $(document).ajaxComplete(function(){
+                $("#wait").css("display", "none");
+            });
+     
+            $('body').on('click', '.clickable', function(ev) {
+                window.open($(this).parent().find('a').attr('href'), '_blank');
+            }).hover( function() {
+                $(this).toggleClass('hover');
+            });
+            
+            $("#searchForm").submit(function(ev) {
+               ev.preventDefault();
+               
+               $.ajax({
+                   type: $("#searchForm").attr("method"),
+                   url: $("#searchForm").attr("action"),
+                   data: $("#searchForm").serialize(),
+                   success: function(data) {
+                       console.log("success: ", $("tbody").children().length);
+                       
+                       for(var i=0; i<data.length; i++) {
+                           if($("tbody").children().length < data.length){
+                               
+                               $("tbody").append("<tr><td class='clickable'></td><td class='clickable'></td><td></td></tr>");
+                           }
+                           var tdC1 = $("tbody").children("tr:nth-child("+i+")").children("td:nth-child(1)");
+                           var tdC2 = $("tbody").children("tr:nth-child("+i+")").children("td:nth-child(2)");
+                           var tdC3 = $("tbody").children("tr:nth-child("+i+")").children("td:nth-child(3)");
+                           
+                           tdC1.html("<img src='" + data[i].img_url +"' />");
+                           tdC2.html("<a href='" + data[i].url + "' onclick='return false;'>"
+                           + "<div>" + data[i].name + "</div>"
+                           + "<div>" 
+                           + "<img src='" + data[i].rating_img + "' />"
+                           + "</div>"
+                           + "</a>");
+                           tdC3.html("<input type='checkbox' name='barId'" + (data[i].isbooked?"checked='true' ":"") + "value='" + data[i].id  + "'>");
+                       } 
+                   },
+                   error: function(msg) {
+                       console.log("error: ",msg.responseText);
+                       alert(msg.responseText);
+                   }
+               });
+               
+               
+            });
+            
+            
+             $('body').on('change', 'input:checkbox', function(ev) {
+                console.log(this.checked);
+                var checkbox = this;
+                
+                $.ajax({
+                    type: "post",
+                    url: "/booking",
+                    data: {
+                        isBooking: this.checked,
+                        barId: this.value
+                    },
+                    success: function(data) {
+                        console.log(data);
+                    },
+                    error: function(msg) {
+                        alert(msg.responseText);
+                        console.log(".prop1 "+ $(checkbox).prop('checked'), this.checked)
+                        $(checkbox).prop('checked', false);
+                        console.log(".prop2 "+ $(checkbox).prop('checked'))
+                    }
+                    
+                });
+                if(this.checked) {
+                    //Do stuff
+                    console.log(this.value + "is checked");
+                    
+                } else {
+                    console.log(this.value + "unchecked");
+                }
+                
+            });
+        });
+    </script>
+    <body>
+        <header>
+            <% include partials/header %>
+        </header>    
+        
+        <main>
+            <h2 class='title'>WHERE TO GO TONIGHT?</h2>
+            <div id="gradient"></div>
+            <form class="searchbox" id="searchForm" action="/search" method="post">
+                <input type="search" placeholder="Search City" name="cityName" required />
+                <button type="submit" value="search">&nbsp;<i class="fa fa-search fa-2x" aria-hidden="true"></i></button>
+            </form>
+            <div class="scrollable-div">
+                <table class = "table table-striped table-hover">
+                <tbody>
+                    <% for(var i=0; i<data.length; i++) { %>
+                        
+                        <tr>
+                            
+                            <td class='clickable'>
+                                <img src='<%= data[i].img_url %>' />
+                                
+                            </td>
+                            <td class='clickable'>
+                                <a href='<%= data[i].url %>' onclick="return false;"> 
+                                    <div><%= data[i].name %></div>
+                                    <div>
+                                        <img src='<%= data[i].rating_img %>' />
+                                    </div>
+                                </a>
+                            </td>
+                            <td>
+                                <input type="checkbox" name="barId" value="<%= data[i].id %>" <%= data[i].isbooked?"checked":"" %>>
+                            </td>
+                           
+                        </tr>   
+                        
+                    <% } %>
+                </tbody>
+            </table>    
+            </div>
+        </main>
+        
+    <div class="modal"></div> 
+    <div id="wait" style="display:none;width:69px;height:89px;position:absolute;top:50%;left:50%;padding:2px;"><img src='images/loading.gif' width="64" height="64" /></div>
+    </body>
+    <footer>
+        <% include partials/footer %>
+    </footer>
+</html>    
